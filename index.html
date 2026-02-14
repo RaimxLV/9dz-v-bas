@@ -98,7 +98,10 @@
         /* Forms */
         .form-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 6px; font-weight: 500; font-size: 14px; color: var(--text-secondary); }
-        input, select, textarea {
+        
+        /* Šeit bija problēma. "appearance: none" noslēpa checkbox. 
+           Es pievienoju izņēmumu :not([type="checkbox"]) */
+        input:not([type="checkbox"]), select, textarea {
             width: 100%;
             padding: 12px;
             border: 1px solid var(--border);
@@ -107,10 +110,19 @@
             font-size: 16px;
             appearance: none;
         }
+        
+        /* Šis kods salabo ķeksīti, lai tas būtu redzams un oranžs */
+        input[type="checkbox"] {
+            appearance: auto !important; /* Piespiež rādīt standarta ķeksi */
+            width: 20px; 
+            height: 20px;
+            accent-color: var(--primary);
+            cursor: pointer;
+        }
+
         input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); }
         .checkbox-wrapper { display: flex; align-items: center; gap: 10px; }
-        .checkbox-wrapper input { width: 20px; height: 20px; }
-
+        
         /* Cat List Cards */
         .cat-card {
             background: var(--surface);
@@ -193,6 +205,37 @@
         .detail-row span:first-child { font-weight: 500; color: var(--text-secondary); }
         .detail-row span:last-child { font-weight: 600; text-align: right; }
 
+        /* JAUNS: Pilnekrāna attēla skata stils */
+        #fullscreen-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95);
+            z-index: 9999;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        #fullscreen-img {
+            max-width: 95%;
+            max-height: 80vh;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 0 20px rgba(255,255,255,0.1);
+        }
+        .close-overlay-btn {
+            background: white;
+            color: #333;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
     </style>
 </head>
 <body>
@@ -230,10 +273,12 @@
                         <option value="Meitene">Meitene</option>
                     </select>
                 </div>
+                
                 <div class="form-group checkbox-wrapper">
                     <input type="checkbox" id="inp-sterilized">
                     <label for="inp-sterilized" style="margin:0">Sterilizēts / Kastrēts</label>
                 </div>
+
                 <div class="form-group">
                     <label>Vakcinācijas datums</label>
                     <input type="date" id="inp-vaccine">
@@ -313,6 +358,11 @@
         </div>
     </main>
 
+    <div id="fullscreen-overlay" onclick="closeImage()">
+        <img id="fullscreen-img" onclick="event.stopPropagation()">
+        <button class="close-overlay-btn" onclick="closeImage()">AIZVĒRT ✕</button>
+    </div>
+
     <div id="fab-add" class="fab" onclick="openForm()">+</div>
 
     <script>
@@ -352,6 +402,7 @@
             renderList();
             showView('list');
             resetForm();
+            closeImage(); // Aizveram bildi ja tā bija vaļā
         }
 
         function openSettings() {
@@ -405,7 +456,10 @@
                 document.getElementById('inp-chip').value = cat.chip;
                 document.getElementById('inp-gender').value = cat.gender;
                 document.getElementById('inp-vaccine').value = cat.vaccineDate;
+                
+                // Ieliekam vērtību
                 document.getElementById('inp-sterilized').checked = cat.sterilized;
+                
                 document.getElementById('inp-notes').value = cat.notes;
                 document.getElementById('inp-location').value = cat.location;
                 document.getElementById('inp-foster-addr').value = cat.fosterAddress || '';
@@ -441,7 +495,10 @@
                 chip: document.getElementById('inp-chip').value,
                 gender: document.getElementById('inp-gender').value,
                 vaccineDate: document.getElementById('inp-vaccine').value,
+                
+                // Nolasām checkbox vērtību
                 sterilized: document.getElementById('inp-sterilized').checked,
+                
                 notes: document.getElementById('inp-notes').value,
                 location: document.getElementById('inp-location').value,
                 fosterAddress: document.getElementById('inp-foster-addr').value,
@@ -562,7 +619,11 @@
             let fosterInfo = cat.location === 'Pagaidu mājās' ? `
                 <div class="detail-row"><span>Adrese:</span> <span>${cat.fosterAddress || '-'}</span></div>
                 <div class="detail-row"><span>Kontakti:</span> <span><a href="tel:${cat.fosterContact}">${cat.fosterContact || '-'}</a></span></div>` : '';
-            const mainImg = cat.photoMain ? `<img src="${cat.photoMain}" class="detail-img-header" onclick="openImage('${cat.photoMain}')">` : '<div style="height:100px; background:#eee; border-radius:12px; display:flex; align-items:center; justify-content:center; margin-bottom:20px">Nav bildes</div>';
+            
+            // Izmantojam this.src lai padotu bildi uz pilnekrāna funkciju
+            const mainImg = cat.photoMain ? `<img src="${cat.photoMain}" class="detail-img-header" onclick="openImage(this.src)">` : '<div style="height:100px; background:#eee; border-radius:12px; display:flex; align-items:center; justify-content:center; margin-bottom:20px">Nav bildes</div>';
+            
+            // Pases bildei saglabajam base64
             const passImg = cat.photoPassport ? `<div class="detail-row"><span>Pase:</span> <span><button class="btn btn-secondary" style="padding:5px 10px; font-size:12px" onclick="openImage('${cat.photoPassport}')">Skatīt bildi</button></span></div>` : '';
             
             container.innerHTML = `
@@ -589,9 +650,14 @@
             }
         }
         
+        // --- JAUNS: Bildes atvēršana ar aizvēršanas pogu ---
         function openImage(base64) {
-            const win = window.open("");
-            win.document.write(`<img src="${base64}" style="width:100%">`);
+            document.getElementById('fullscreen-img').src = base64;
+            document.getElementById('fullscreen-overlay').style.display = 'flex';
+        }
+
+        function closeImage() {
+            document.getElementById('fullscreen-overlay').style.display = 'none';
         }
 
         function saveToLocal() {

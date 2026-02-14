@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>9 Dzīvības – Kaķu žurnāls</title>
+    <style>
+        :root {
+            --primary: #FF8C42;
+            --primary-dark: #E67329;
+            --bg: #F4F6F8;
+            --surface: #FFFFFF;
+            --text: #2D3436;
+            --text-secondary: #636E72;
+            --border: #DFE6E9;
+            --danger: #FF7675;
+            --success: #55EFC4;
+            --radius: 12px;
+            --shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Header */
+        header {
+            background: var(--surface);
+            padding: 15px 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 10;
+        }
+        h1 { margin: 0; font-size: 20px; font-weight: 700; color: var(--primary); }
+        .icon-btn { font-size: 24px; cursor: pointer; background:none; border:none; padding:0; }
+        
+        /* Main Container */
+        main {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            position: relative;
+        }
+
+        /* Views Utility */
+        .view { display: none; animation: fadeIn 0.3s ease; }
+        .view.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Buttons */
+        .btn {
+            border: none;
+            padding: 12px 20px;
+            border-radius: var(--radius);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.1s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn-primary { background: var(--primary); color: white; width: 100%; }
+        .btn-secondary { background: var(--border); color: var(--text); width: 100%; }
+        .btn-danger { background: var(--danger); color: white; width: 100%; margin-top: 10px; }
+        
+        .fab {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            font-size: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 5px 15px rgba(255, 140, 66, 0.4);
+            z-index: 100;
+        }
+
+        /* Forms */
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 6px; font-weight: 500; font-size: 14px; color: var(--text-secondary); }
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--surface);
+            font-size: 16px;
+            appearance: none;
+        }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); }
+        .checkbox-wrapper { display: flex; align-items: center; gap: 10px; }
+        .checkbox-wrapper input { width: 20px; height: 20px; }
+
+        /* Cat List Cards */
+        .cat-card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: var(--shadow);
+            display: flex;
+            gap: 15px;
+            cursor: pointer;
+        }
+        .cat-thumb {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: #eee;
+            flex-shrink: 0;
+        }
+        .cat-info h3 { margin: 0 0 5px 0; font-size: 18px; }
+        .cat-info p { margin: 0; color: var(--text-secondary); font-size: 14px; }
+        .status-badge {
+            display: inline-block;
+            font-size: 12px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            background: #eee;
+            margin-top: 5px;
+        }
+
+        /* Image Upload */
+        .image-preview-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 5px;
+        }
+        .image-box {
+            background: #f0f0f0;
+            border-radius: var(--radius);
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+            border: 2px dashed #ccc;
+        }
+        .image-box img { width: 100%; height: 100%; object-fit: cover; }
+        .image-box span { font-size: 12px; color: #999; text-align: center; padding: 5px; }
+        .hidden { display: none; }
+
+        /* Settings View */
+        .settings-card {
+            background: var(--surface);
+            padding: 20px;
+            border-radius: var(--radius);
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+        .settings-card h3 { margin-top: 0; }
+        .settings-card p { font-size: 14px; color: var(--text-secondary); margin-bottom: 15px; }
+
+        /* Detail View */
+        .detail-img-header {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: var(--radius);
+            margin-bottom: 20px;
+            background-color: #ddd;
+        }
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid #eee;
+            padding: 10px 0;
+        }
+        .detail-row span:first-child { font-weight: 500; color: var(--text-secondary); }
+        .detail-row span:last-child { font-weight: 600; text-align: right; }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <button id="header-btn-left" class="icon-btn"></button>
+        <h1>9 Dzīvības 🐾</h1>
+        <button id="header-btn-right" class="icon-btn" onclick="openSettings()">⚙️</button>
+    </header>
+
+    <main>
+        <div id="list-view" class="view active">
+            <div id="cat-list-container"></div>
+            <div id="empty-state" style="text-align:center; margin-top: 50px; color:#aaa; display:none;">
+                Saraksts ir tukšs.<br>Pievieno pirmo kaķi!
+            </div>
+        </div>
+
+        <div id="form-view" class="view">
+            <form id="cat-form">
+                <input type="hidden" id="edit-id">
+                
+                <div class="form-group">
+                    <label>Vārds</label>
+                    <input type="text" id="inp-name" required placeholder="Piem. Muris">
+                </div>
+                <div class="form-group">
+                    <label>Čipa numurs</label>
+                    <input type="number" id="inp-chip" placeholder="15 cipari">
+                </div>
+                <div class="form-group">
+                    <label>Dzimums</label>
+                    <select id="inp-gender">
+                        <option value="Puika">Puika</option>
+                        <option value="Meitene">Meitene</option>
+                    </select>
+                </div>
+                <div class="form-group checkbox-wrapper">
+                    <input type="checkbox" id="inp-sterilized">
+                    <label for="inp-sterilized" style="margin:0">Sterilizēts / Kastrēts</label>
+                </div>
+                <div class="form-group">
+                    <label>Vakcinācijas datums</label>
+                    <input type="date" id="inp-vaccine">
+                </div>
+                <div class="form-group">
+                    <label>Atrašanās vieta</label>
+                    <select id="inp-location" onchange="toggleFosterFields()">
+                        <option value="Pie mums">Pie mums (Patversmē)</option>
+                        <option value="Pagaidu mājās">Pagaidu mājās</option>
+                        <option value="Adoptēts">Adoptēts</option>
+                    </select>
+                </div>
+                <div id="foster-fields" class="hidden">
+                    <div class="form-group">
+                        <label>Pagaidu māju adrese</label>
+                        <input type="text" id="inp-foster-addr" placeholder="Iela, Pilsēta">
+                    </div>
+                    <div class="form-group">
+                        <label>Pagaidu māju kontakti</label>
+                        <input type="text" id="inp-foster-phone" placeholder="Tel. numurs">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Piezīmes</label>
+                    <textarea id="inp-notes" rows="3" placeholder="Raksturs, īpašas pazīmes..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Bildes</label>
+                    <div class="image-preview-container">
+                        <div class="image-box" onclick="document.getElementById('file-main').click()">
+                            <img id="preview-main" class="hidden">
+                            <span id="txt-main">+ Kaķa Bilde</span>
+                        </div>
+                        <div class="image-box" onclick="document.getElementById('file-pass').click()">
+                            <img id="preview-pass" class="hidden">
+                            <span id="txt-pass">+ Pases Bilde</span>
+                        </div>
+                    </div>
+                    <input type="file" id="file-main" accept="image/*" class="hidden" onchange="handleImage(this, 'preview-main', 'txt-main')">
+                    <input type="file" id="file-pass" accept="image/*" class="hidden" onchange="handleImage(this, 'preview-pass', 'txt-pass')">
+                </div>
+                <button type="submit" class="btn btn-primary">Saglabāt</button>
+                <button type="button" class="btn btn-secondary" style="width:100%; margin-top:10px" onclick="goHome()">Atcelt</button>
+            </form>
+        </div>
+
+        <div id="detail-view" class="view">
+            <div id="detail-content"></div>
+            <button class="btn btn-primary" id="btn-edit-cat" style="margin-top:20px">Rediģēt</button>
+            <button class="btn btn-danger" onclick="deleteCurrentCat()">Dzēst ierakstu</button>
+            <button class="btn btn-secondary" style="width:100%; margin-top:10px" onclick="goHome()">Atpakaļ</button>
+        </div>
+
+        <div id="settings-view" class="view">
+            <h2 style="margin-top:0">Datu Pārvaldība</h2>
+            
+            <div class="settings-card">
+                <h3>📤 Eksportēt datus</h3>
+                <p>Saglabā visus kaķu datus failā, lai tos nosūtītu draugam vai saglabātu rezerves kopiju.</p>
+                <button class="btn btn-primary" onclick="exportData()">Lejupielādēt failu (.json)</button>
+            </div>
+
+            <div class="settings-card">
+                <h3>📥 Importēt datus</h3>
+                <p>Ielādē datus no faila. Uzmanību: Esošie dati tiks papildināti.</p>
+                <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(this)">
+                <button class="btn btn-secondary" onclick="document.getElementById('import-file').click()">Izvēlēties failu</button>
+            </div>
+
+            <div class="settings-card" style="border: 1px solid #FF7675;">
+                <h3 style="color:var(--danger)">🗑️ Dzēst visus datus</h3>
+                <p>Neatgriezeniski izdzēš visu datu bāzi no šī telefona.</p>
+                <button class="btn btn-danger" onclick="clearAllData()">Dzēst visu</button>
+            </div>
+            
+            <button class="btn btn-secondary" onclick="goHome()">Aizvērt</button>
+        </div>
+    </main>
+
+    <div id="fab-add" class="fab" onclick="openForm()">+</div>
+
+    <script>
+        // --- DATA MANAGEMENT ---
+        let cats = JSON.parse(localStorage.getItem('cats_db')) || [];
+        let currentCatId = null;
+
+        // --- NAVIGATION ---
+        const views = {
+            list: document.getElementById('list-view'),
+            form: document.getElementById('form-view'),
+            detail: document.getElementById('detail-view'),
+            settings: document.getElementById('settings-view')
+        };
+        const fab = document.getElementById('fab-add');
+        const headerBtnLeft = document.getElementById('header-btn-left');
+        const headerBtnRight = document.getElementById('header-btn-right');
+
+        function showView(viewName) {
+            Object.values(views).forEach(el => el.classList.remove('active'));
+            views[viewName].classList.add('active');
+            
+            // Header logic
+            if (viewName === 'list') {
+                fab.style.display = 'flex';
+                headerBtnLeft.innerHTML = '';
+                headerBtnRight.style.display = 'block';
+            } else {
+                fab.style.display = 'none';
+                headerBtnLeft.innerHTML = '<span style="font-size:24px;" onclick="goHome()">&#8592;</span>';
+                if(viewName !== 'settings') headerBtnRight.style.display = 'block'; 
+                else headerBtnRight.style.display = 'none';
+            }
+        }
+
+        function goHome() {
+            renderList();
+            showView('list');
+            resetForm();
+        }
+
+        function openSettings() {
+            showView('settings');
+        }
+
+        // --- LIST LOGIC ---
+        function renderList() {
+            const container = document.getElementById('cat-list-container');
+            container.innerHTML = '';
+            
+            if (cats.length === 0) {
+                document.getElementById('empty-state').style.display = 'block';
+                return;
+            } else {
+                document.getElementById('empty-state').style.display = 'none';
+            }
+
+            cats.sort((a, b) => b.updatedAt - a.updatedAt).forEach(cat => {
+                const card = document.createElement('div');
+                card.className = 'cat-card';
+                card.onclick = () => openDetail(cat.id);
+
+                const imgDisplay = cat.photoMain ? `<img src="${cat.photoMain}" class="cat-thumb">` : `<div class="cat-thumb" style="display:flex;align-items:center;justify-content:center">🐱</div>`;
+                
+                let statusColor = '#eee';
+                if(cat.location === 'Pie mums') statusColor = '#ffeaa7';
+                if(cat.location === 'Pagaidu mājās') statusColor = '#81ecec';
+                if(cat.location === 'Adoptēts') statusColor = '#55efc4';
+
+                card.innerHTML = `
+                    ${imgDisplay}
+                    <div class="cat-info">
+                        <h3>${cat.name}</h3>
+                        <p>${cat.gender} • Čips: ${cat.chip || '-'}</p>
+                        <span class="status-badge" style="background:${statusColor}">${cat.location}</span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // --- FORM & IMAGE LOGIC ---
+        function openForm(id = null) {
+            resetForm();
+            if (id) {
+                const cat = cats.find(c => c.id === id);
+                if (!cat) return;
+                document.getElementById('edit-id').value = cat.id;
+                document.getElementById('inp-name').value = cat.name;
+                document.getElementById('inp-chip').value = cat.chip;
+                document.getElementById('inp-gender').value = cat.gender;
+                document.getElementById('inp-vaccine').value = cat.vaccineDate;
+                document.getElementById('inp-sterilized').checked = cat.sterilized;
+                document.getElementById('inp-notes').value = cat.notes;
+                document.getElementById('inp-location').value = cat.location;
+                document.getElementById('inp-foster-addr').value = cat.fosterAddress || '';
+                document.getElementById('inp-foster-phone').value = cat.fosterContact || '';
+                if(cat.photoMain) setImgPreview('preview-main', 'txt-main', cat.photoMain);
+                if(cat.photoPassport) setImgPreview('preview-pass', 'txt-pass', cat.photoPassport);
+            }
+            toggleFosterFields();
+            showView('form');
+        }
+
+        function resetForm() {
+            document.getElementById('cat-form').reset();
+            document.getElementById('edit-id').value = '';
+            resetImgPreview('preview-main', 'txt-main');
+            resetImgPreview('preview-pass', 'txt-pass');
+            toggleFosterFields();
+        }
+
+        function toggleFosterFields() {
+            const loc = document.getElementById('inp-location').value;
+            const fosterDiv = document.getElementById('foster-fields');
+            fosterDiv.classList.toggle('hidden', loc !== 'Pagaidu mājās');
+        }
+
+        document.getElementById('cat-form').onsubmit = function(e) {
+            e.preventDefault();
+            const id = document.getElementById('edit-id').value;
+            const newCat = {
+                id: id || Date.now().toString(),
+                updatedAt: Date.now(),
+                name: document.getElementById('inp-name').value,
+                chip: document.getElementById('inp-chip').value,
+                gender: document.getElementById('inp-gender').value,
+                vaccineDate: document.getElementById('inp-vaccine').value,
+                sterilized: document.getElementById('inp-sterilized').checked,
+                notes: document.getElementById('inp-notes').value,
+                location: document.getElementById('inp-location').value,
+                fosterAddress: document.getElementById('inp-foster-addr').value,
+                fosterContact: document.getElementById('inp-foster-phone').value,
+                photoMain: document.getElementById('preview-main').src || '',
+                photoPassport: document.getElementById('preview-pass').src || ''
+            };
+            
+            if(newCat.photoMain.includes('window.location')) newCat.photoMain = '';
+            if(newCat.photoPassport.includes('window.location')) newCat.photoPassport = '';
+
+            if (id) {
+                const index = cats.findIndex(c => c.id === id);
+                cats[index] = newCat;
+            } else {
+                cats.push(newCat);
+            }
+            saveToLocal();
+            goHome();
+        };
+
+        function handleImage(input, imgId, txtId) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.src = e.target.result;
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        const maxDim = 800;
+                        let w = img.width, h = img.height;
+                        if (w > h) { if (w > maxDim) { h *= maxDim / w; w = maxDim; } } 
+                        else { if (h > maxDim) { w *= maxDim / h; h = maxDim; } }
+                        canvas.width = w; canvas.height = h;
+                        ctx.drawImage(img, 0, 0, w, h);
+                        setImgPreview(imgId, txtId, canvas.toDataURL('image/jpeg', 0.7));
+                    }
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function setImgPreview(imgId, txtId, src) {
+            document.getElementById(imgId).src = src;
+            document.getElementById(imgId).classList.remove('hidden');
+            document.getElementById(txtId).classList.add('hidden');
+        }
+        function resetImgPreview(imgId, txtId) {
+            document.getElementById(imgId).src = '';
+            document.getElementById(imgId).classList.add('hidden');
+            document.getElementById(txtId).classList.remove('hidden');
+        }
+
+        // --- EXPORT / IMPORT LOGIC ---
+        function exportData() {
+            const dataStr = JSON.stringify(cats);
+            const blob = new Blob([dataStr], {type: "application/json"});
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = "kaki_dati_" + new Date().toISOString().slice(0,10) + ".json";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function importData(input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedCats = JSON.parse(e.target.result);
+                    if (Array.isArray(importedCats)) {
+                        // Apvienojam datus vai aizvietojam? Šeit apvienojam unikālos
+                        const existingIds = new Set(cats.map(c => c.id));
+                        let addedCount = 0;
+                        
+                        importedCats.forEach(cat => {
+                            if(!existingIds.has(cat.id)) {
+                                cats.push(cat);
+                                addedCount++;
+                            }
+                        });
+                        
+                        saveToLocal();
+                        alert(`Sekmīgi importēti ${addedCount} jauni ieraksti!`);
+                        goHome();
+                    } else {
+                        alert("Kļūda: Faila formāts nav pareizs.");
+                    }
+                } catch (err) {
+                    alert("Kļūda nolasot failu. Pārliecinies, ka tas ir .json fails.");
+                }
+            };
+            reader.readAsText(file);
+            input.value = ''; // Reset input
+        }
+
+        function clearAllData() {
+            if(confirm("UZMANĪBU! Vai tiešām dzēst VISUS datus?")) {
+                cats = [];
+                saveToLocal();
+                goHome();
+            }
+        }
+
+        // --- DETAIL VIEW ---
+        function openDetail(id) {
+            currentCatId = id;
+            const cat = cats.find(c => c.id === id);
+            if (!cat) return;
+            const container = document.getElementById('detail-content');
+            let fosterInfo = cat.location === 'Pagaidu mājās' ? `
+                <div class="detail-row"><span>Adrese:</span> <span>${cat.fosterAddress || '-'}</span></div>
+                <div class="detail-row"><span>Kontakti:</span> <span><a href="tel:${cat.fosterContact}">${cat.fosterContact || '-'}</a></span></div>` : '';
+            const mainImg = cat.photoMain ? `<img src="${cat.photoMain}" class="detail-img-header" onclick="openImage('${cat.photoMain}')">` : '<div style="height:100px; background:#eee; border-radius:12px; display:flex; align-items:center; justify-content:center; margin-bottom:20px">Nav bildes</div>';
+            const passImg = cat.photoPassport ? `<div class="detail-row"><span>Pase:</span> <span><button class="btn btn-secondary" style="padding:5px 10px; font-size:12px" onclick="openImage('${cat.photoPassport}')">Skatīt bildi</button></span></div>` : '';
+            
+            container.innerHTML = `
+                ${mainImg}
+                <h2 style="margin-top:0">${cat.name}</h2>
+                <div class="detail-row"><span>Čips:</span> <span>${cat.chip || '-'}</span></div>
+                <div class="detail-row"><span>Dzimums:</span> <span>${cat.gender}</span></div>
+                <div class="detail-row"><span>Vakcinēts:</span> <span>${cat.vaccineDate || 'Nav norādīts'}</span></div>
+                <div class="detail-row"><span>Sterilizēts:</span> <span>${cat.sterilized ? 'Jā' : 'Nē'}</span></div>
+                <div class="detail-row"><span>Statuss:</span> <span><strong>${cat.location}</strong></span></div>
+                ${fosterInfo}
+                ${passImg}
+                <div style="margin-top:15px"><label style="font-size:12px">Piezīmes:</label><p style="background:#fff; padding:10px; border-radius:8px; border:1px solid #eee; margin-top:5px">${cat.notes || 'Nav piezīmju'}</p></div>
+            `;
+            document.getElementById('btn-edit-cat').onclick = () => openForm(cat.id);
+            showView('detail');
+        }
+
+        function deleteCurrentCat() {
+            if(confirm('Vai tiešām dzēst šo kaķi?')) {
+                cats = cats.filter(c => c.id !== currentCatId);
+                saveToLocal();
+                goHome();
+            }
+        }
+        
+        function openImage(base64) {
+            const win = window.open("");
+            win.document.write(`<img src="${base64}" style="width:100%">`);
+        }
+
+        function saveToLocal() {
+            try { localStorage.setItem('cats_db', JSON.stringify(cats)); } 
+            catch (e) { alert('Uzmanību: Pārāk daudz datu (bilžu).'); }
+        }
+
+        renderList();
+    </script>
+</body>
+</html>
